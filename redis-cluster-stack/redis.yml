@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  redis-master-1:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-master-1 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-master-1-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7001:6379"
+    deploy:
+      replicas: 1
+
+  redis-master-2:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-master-2 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-master-2-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7002:6379"
+    deploy:
+      replicas: 1
+
+  redis-master-3:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-master-3 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-master-3-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7003:6379"
+    deploy:
+      replicas: 1
+
+  redis-replica-1:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-replica-1 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-replica-1-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7004:6379"
+    deploy:
+      replicas: 1
+
+  redis-replica-2:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-replica-2 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-replica-2-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7005:6379"
+    deploy:
+      replicas: 1
+
+  redis-replica-3:
+    image: redis:7-alpine
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip redis-replica-3 --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    volumes:
+      - redis-replica-3-data:/data
+    networks:
+      - redis-cluster-net
+    ports:
+      - "7006:6379"
+    deploy:
+      replicas: 1
+
+volumes:
+  redis-master-1-data:
+  redis-master-2-data:
+  redis-master-3-data:
+  redis-replica-1-data:
+  redis-replica-2-data:
+  redis-replica-3-data:
+
+networks:
+  redis-cluster-net:
+    driver: overlay
+    attachable: true 
+    
