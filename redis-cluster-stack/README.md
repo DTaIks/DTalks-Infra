@@ -2,8 +2,8 @@
 
 ## Redis Cluster with Docker Swarm
 
-<p><em>Redis를 Docker Swarm에서 클러스터 모드로 구성하여,</em></p>
-<p><em>고가용성과 효율적인 데이터 분산을 구현했습니다.</em></p>
+<p><em>Redis를 Docker Swarm에서 클러스터 모드로 구성하여, <br>
+고가용성과 효율적인 데이터 분산을 구현했습니다.</em></p>
 
 <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
 <img src="https://img.shields.io/badge/Docker%20Swarm-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
@@ -45,7 +45,7 @@ docker exec -it $(docker ps -q -f name=redis-master-1) redis-cli -c
 
 <br>
 
-### 접속 정보
+### ✨ 접속 정보
 
 **포트 매핑**
 
@@ -67,7 +67,9 @@ redis-cli -c -p 7002
 redis-cli -c -p 7003
 ```
 
-**클러스터 제거**
+<br>
+
+### 🗑️ 클러스터 제거
 
 ```bash
 docker stack rm redis-cluster
