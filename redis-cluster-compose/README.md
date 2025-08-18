@@ -68,5 +68,5 @@ redis-cli -c -p 7003
 ### 🗑️ 클러스터 제거
 
 ```bash
-docker-compose down
+docker compose down
 ```
