@@ -35,32 +35,96 @@ for i in 1 2 3; do
     
     if docker ps -q -f name=$master_container | grep -q .; then
         docker exec $master_container redis-cli FLUSHALL 2>/dev/null || true
-        docker exec $master_container redis-cli CLUSTER RESET 2>/dev/null || true
+        docker exec $master_container redis-cli CLUSTER RESET HARD 2>/dev/null || true
     fi
     
     if docker ps -q -f name=$replica_container | grep -q .; then
         docker exec $replica_container redis-cli FLUSHALL 2>/dev/null || true
-        docker exec $replica_container redis-cli CLUSTER RESET 2>/dev/null || true
+        docker exec $replica_container redis-cli CLUSTER RESET HARD 2>/dev/null || true
     fi
 done
 
-# 클러스터 초기화
+# 클러스터 노드들이 완전히 리셋될 때까지 대기
+echo "클러스터 리셋 대기 중..."
+sleep 10
+
+# 올바른 클러스터 초기화 (호스트 관점에서 접근 가능한 포트 사용)
 echo "클러스터 초기화 중..."
 if docker ps -q -f name=redis-master-1 | grep -q .; then
+    # 컨테이너 내부에서 호스트의 포트로 접근
     docker exec redis-master-1 redis-cli --cluster create \
-      127.0.0.1:6379 127.0.0.1:6379 127.0.0.1:6379 \
-      127.0.0.1:6379 127.0.0.1:6379 127.0.0.1:6379 \
+      host.docker.internal:7001 host.docker.internal:7002 host.docker.internal:7003 \
+      host.docker.internal:7004 host.docker.internal:7005 host.docker.internal:7006 \
       --cluster-replicas 1 --cluster-yes
+    
+    # 만약 host.docker.internal이 작동하지 않으면 localhost 시도
+    if [ $? -ne 0 ]; then
+        echo "host.docker.internal 실패, localhost로 재시도..."
+        docker exec redis-master-1 redis-cli --cluster create \
+          localhost:7001 localhost:7002 localhost:7003 \
+          localhost:7004 localhost:7005 localhost:7006 \
+          --cluster-replicas 1 --cluster-yes
+    fi
+    
+    # 그래도 실패하면 컨테이너 IP로 시도
+    if [ $? -ne 0 ]; then
+        echo "localhost 실패, 컨테이너 IP로 재시도..."
+        
+        # 각 컨테이너의 IP 주소 가져오기
+        MASTER1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-1)
+        MASTER2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-2)
+        MASTER3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-3)
+        REPLICA1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-1)
+        REPLICA2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-2)
+        REPLICA3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-3)
+        
+        echo "컨테이너 IP들:"
+        echo "  Master1: $MASTER1_IP"
+        echo "  Master2: $MASTER2_IP"
+        echo "  Master3: $MASTER3_IP"
+        echo "  Replica1: $REPLICA1_IP"
+        echo "  Replica2: $REPLICA2_IP"
+        echo "  Replica3: $REPLICA3_IP"
+        
+        docker exec redis-master-1 redis-cli --cluster create \
+          ${MASTER1_IP}:6379 ${MASTER2_IP}:6379 ${MASTER3_IP}:6379 \
+          ${REPLICA1_IP}:6379 ${REPLICA2_IP}:6379 ${REPLICA3_IP}:6379 \
+          --cluster-replicas 1 --cluster-yes
+    fi
 else
     echo "redis-master-1 컨테이너를 찾을 수 없습니다."
     exit 1
 fi
 
+# 클러스터 생성 후 대기
+echo "클러스터 안정화 대기 중..."
+sleep 10
+
 # 상태 확인
 echo "클러스터 상태 확인:"
 docker exec redis-master-1 redis-cli cluster info | grep cluster_state
+echo ""
+echo "클러스터 노드 정보:"
+docker exec redis-master-1 redis-cli cluster nodes
 
-echo "🎉 Redis 클러스터 배포 완료!"
+# 클러스터가 정상적으로 생성되었는지 검증
+cluster_state=$(docker exec redis-master-1 redis-cli cluster info | grep cluster_state | cut -d: -f2)
+cluster_size=$(docker exec redis-master-1 redis-cli cluster info | grep cluster_size | cut -d: -f2)
+
+if [ "$cluster_state" = "ok" ] && [ "$cluster_size" -gt 1 ]; then
+    echo ""
+    echo "🎉 Redis 클러스터 배포 완료!"
+    echo "클러스터 상태: $cluster_state"
+    echo "클러스터 크기: $cluster_size"
+else
+    echo ""
+    echo "클러스터 초기화 실패"
+    echo "클러스터 상태: $cluster_state"
+    echo "클러스터 크기: $cluster_size"
+    exit 1
+fi
+
+echo ""
 echo "접속 정보:"
 echo "   - Master: localhost:7001, 7002, 7003"
 echo "   - Replica: localhost:7004, 7005, 7006"
@@ -69,4 +133,9 @@ echo ""
 echo "관리 명령어:"
 echo "   - 시작: docker compose up -d"
 echo "   - 중지: docker compose down"
-echo "   - 로그: docker compose logs -f" 
+echo "   - 로그: docker compose logs -f"
+echo ""
+echo "환경변수 설정:"
+echo "   export SPRING_DATA_REDIS_CLUSTER_NODES=localhost:7001,localhost:7002,localhost:7003,localhost:7004,localhost:7005,localhost:7006"
+echo "   export SPRING_DATA_REDIS_CLUSTER_MAX_REDIRECTS=5"
+echo "   export SPRING_DATA_REDIS_TIMEOUT=5000"
