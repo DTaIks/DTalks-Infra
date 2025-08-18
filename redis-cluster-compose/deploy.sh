@@ -4,11 +4,11 @@ echo "🚀 Redis 클러스터 배포"
 
 # 기존 컨테이너 정리
 echo "기존 컨테이너 정리 중..."
-docker-compose down -v 2>/dev/null || true
+docker compose down -v 2>/dev/null || true
 
 # 새 컨테이너 시작
 echo "Redis 클러스터 컨테이너 시작 중..."
-docker-compose up -d
+docker compose up -d
 
 # 서비스 상태 확인 및 대기
 echo "서비스 시작 대기 중..."
@@ -67,6 +67,6 @@ echo "   - Replica: localhost:7004, 7005, 7006"
 echo "   - 사용법: redis-cli -c -p 7001"
 echo ""
 echo "관리 명령어:"
-echo "   - 시작: docker-compose up -d"
-echo "   - 중지: docker-compose down"
-echo "   - 로그: docker-compose logs -f" 
+echo "   - 시작: docker compose up -d"
+echo "   - 중지: docker compose down"
+echo "   - 로그: docker compose logs -f" 
