@@ -4,7 +4,7 @@ services:
   redis-master-1:
     image: redis:7-alpine
     container_name: redis-master-1
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-master-1-data:/data
     networks:
@@ -16,7 +16,7 @@ services:
   redis-master-2:
     image: redis:7-alpine
     container_name: redis-master-2
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-master-2-data:/data
     networks:
@@ -28,7 +28,7 @@ services:
   redis-master-3:
     image: redis:7-alpine
     container_name: redis-master-3
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-master-3-data:/data
     networks:
@@ -40,7 +40,7 @@ services:
   redis-replica-1:
     image: redis:7-alpine
     container_name: redis-replica-1
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-replica-1-data:/data
     networks:
@@ -52,7 +52,7 @@ services:
   redis-replica-2:
     image: redis:7-alpine
     container_name: redis-replica-2
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-replica-2-data:/data
     networks:
@@ -64,7 +64,7 @@ services:
   redis-replica-3:
     image: redis:7-alpine
     container_name: redis-replica-3
-    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no --cluster-announce-ip localhost --cluster-announce-port 6379 --cluster-announce-bus-port 16379
+    command: redis-server --cluster-enabled yes --cluster-node-timeout 5000 --appendonly yes --bind 0.0.0.0 --protected-mode no
     volumes:
       - redis-replica-3-data:/data
     networks:

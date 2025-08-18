@@ -46,50 +46,50 @@ done
 
 # 클러스터 노드들이 완전히 리셋될 때까지 대기
 echo "클러스터 리셋 대기 중..."
-sleep 10
+sleep 15
 
-# 올바른 클러스터 초기화 (호스트 관점에서 접근 가능한 포트 사용)
+# 컨테이너 IP 주소 가져오기
+echo "컨테이너 IP 주소 확인 중..."
+MASTER1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-1)
+MASTER2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-2)
+MASTER3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-3)
+REPLICA1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-1)
+REPLICA2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-2)
+REPLICA3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-3)
+
+echo "컨테이너 IP들:"
+echo "  Master1: $MASTER1_IP"
+echo "  Master2: $MASTER2_IP"
+echo "  Master3: $MASTER3_IP"
+echo "  Replica1: $REPLICA1_IP"
+echo "  Replica2: $REPLICA2_IP"
+echo "  Replica3: $REPLICA3_IP"
+
+# 클러스터 초기화
 echo "클러스터 초기화 중..."
 if docker ps -q -f name=redis-master-1 | grep -q .; then
-    # 컨테이너 내부에서 호스트의 포트로 접근
+    # 컨테이너 IP를 사용하여 클러스터 생성
     docker exec redis-master-1 redis-cli --cluster create \
-      host.docker.internal:7001 host.docker.internal:7002 host.docker.internal:7003 \
-      host.docker.internal:7004 host.docker.internal:7005 host.docker.internal:7006 \
+      ${MASTER1_IP}:6379 ${MASTER2_IP}:6379 ${MASTER3_IP}:6379 \
+      ${REPLICA1_IP}:6379 ${REPLICA2_IP}:6379 ${REPLICA3_IP}:6379 \
       --cluster-replicas 1 --cluster-yes
     
-    # 만약 host.docker.internal이 작동하지 않으면 localhost 시도
-    if [ $? -ne 0 ]; then
-        echo "host.docker.internal 실패, localhost로 재시도..."
-        docker exec redis-master-1 redis-cli --cluster create \
-          localhost:7001 localhost:7002 localhost:7003 \
-          localhost:7004 localhost:7005 localhost:7006 \
-          --cluster-replicas 1 --cluster-yes
-    fi
-    
-    # 그래도 실패하면 컨테이너 IP로 시도
-    if [ $? -ne 0 ]; then
-        echo "localhost 실패, 컨테이너 IP로 재시도..."
+    if [ $? -eq 0 ]; then
+        echo "클러스터 초기화 성공!"
+    else
+        echo "클러스터 초기화 실패. 재시도 중..."
+        sleep 10
         
-        # 각 컨테이너의 IP 주소 가져오기
-        MASTER1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-1)
-        MASTER2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-2)
-        MASTER3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-master-3)
-        REPLICA1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-1)
-        REPLICA2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-2)
-        REPLICA3_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis-replica-3)
-        
-        echo "컨테이너 IP들:"
-        echo "  Master1: $MASTER1_IP"
-        echo "  Master2: $MASTER2_IP"
-        echo "  Master3: $MASTER3_IP"
-        echo "  Replica1: $REPLICA1_IP"
-        echo "  Replica2: $REPLICA2_IP"
-        echo "  Replica3: $REPLICA3_IP"
-        
+        # 재시도
         docker exec redis-master-1 redis-cli --cluster create \
           ${MASTER1_IP}:6379 ${MASTER2_IP}:6379 ${MASTER3_IP}:6379 \
           ${REPLICA1_IP}:6379 ${REPLICA2_IP}:6379 ${REPLICA3_IP}:6379 \
           --cluster-replicas 1 --cluster-yes
+        
+        if [ $? -ne 0 ]; then
+            echo "클러스터 초기화 재시도 실패"
+            exit 1
+        fi
     fi
 else
     echo "redis-master-1 컨테이너를 찾을 수 없습니다."
@@ -98,7 +98,7 @@ fi
 
 # 클러스터 생성 후 대기
 echo "클러스터 안정화 대기 중..."
-sleep 10
+sleep 20
 
 # 상태 확인
 echo "클러스터 상태 확인:"
